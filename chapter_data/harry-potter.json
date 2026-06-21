@@ -1,0 +1,104 @@
+[
+    {
+        "chapter_heading": "— CHAPTER ONE —",
+        "name": "The Boy Who Lived",
+        "start_page": 9,
+        "end_page": 20
+    },
+    {
+        "chapter_heading": "— CHAPTER TWO —",
+        "name": "The Vanishing Glass",
+        "start_page": 21,
+        "end_page": 29
+    },
+    {
+        "chapter_heading": "— CHAPTER THREE —",
+        "name": "The Letters from No One",
+        "start_page": 30,
+        "end_page": 40
+    },
+    {
+        "chapter_heading": "— CHAPTER FOUR —",
+        "name": "The Keeper of the Keys",
+        "start_page": 41,
+        "end_page": 50
+    },
+    {
+        "chapter_heading": "— CHAPTER FIVE —",
+        "name": "Diagon Alley",
+        "start_page": 51,
+        "end_page": 68
+    },
+    {
+        "chapter_heading": "— CHAPTER SIX —",
+        "name": "The Journey from Platform",
+        "start_page": 69,
+        "end_page": 86
+    },
+    {
+        "chapter_heading": "— CHAPTER SEVEN —",
+        "name": "The Sorting Hat",
+        "start_page": 87,
+        "end_page": 99
+    },
+    {
+        "chapter_heading": "— CHAPTER EIGHT —",
+        "name": "The Potions Master",
+        "start_page": 100,
+        "end_page": 108
+    },
+    {
+        "chapter_heading": "— CHAPTER NINE —",
+        "name": "The Midnight Duel",
+        "start_page": 109,
+        "end_page": 122
+    },
+    {
+        "chapter_heading": "— CHAPTER TEN —",
+        "name": "Hallowe’en",
+        "start_page": 123,
+        "end_page": 134
+    },
+    {
+        "chapter_heading": "— CHAPTER ELEVEN —",
+        "name": "Quidditch",
+        "start_page": 135,
+        "end_page": 144
+    },
+    {
+        "chapter_heading": "— CHAPTER TWELVE —",
+        "name": "The Mirror of Erised",
+        "start_page": 145,
+        "end_page": 159
+    },
+    {
+        "chapter_heading": "— CHAPTER THIRTEEN —",
+        "name": "Nicolas Flamel",
+        "start_page": 160,
+        "end_page": 168
+    },
+    {
+        "chapter_heading": "— CHAPTER FOURTEEN —",
+        "name": "Norbert the Norwegian",
+        "start_page": 169,
+        "end_page": 178
+    },
+    {
+        "chapter_heading": "— CHAPTER FIFTEEN —",
+        "name": "The Forbidden Forest",
+        "start_page": 179,
+        "end_page": 192
+    },
+    {
+        "chapter_heading": "— CHAPTER SIXTEEN —",
+        "name": "Through the Trapdoor",
+        "start_page": 193,
+        "end_page": 210
+    },
+    {
+        "chapter_heading": "— CHAPTER SEVENTEEN —",
+        "name": "The Man with Two Faces",
+        "start_page": 211,
+        "end_page": 228
+    }
+]

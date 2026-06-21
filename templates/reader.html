@@ -1,0 +1,81 @@
+<!doctype html>
+<html>
+  <head>
+    <title>{{ filename }}</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/reader.css') }}"
+    />
+  </head>
+
+  <body>
+    <div class="container">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <h2>📚 Library</h2>
+
+        {% for file in files %}
+
+        <div class="book-item">{{ file }}</div>
+
+        {% endfor %}
+
+        <div class="top-bar">
+          <a href="/" class="home-btn">← Home</a>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <div class="reader-card">
+          <h1 class="title">{{ filename }}</h1>
+
+          <div class="page-info">Page {{ page_num }} of {{ total_pages }}</div>
+
+          <hr />
+
+          <!-- Book Text -->
+          <div class="book-text">{{ text }}</div>
+
+          <hr />
+
+          <!-- Audio Player -->
+          <audio controls>
+            <source
+              src="{{ url_for('static', filename='audio.mp3') }}"
+              type="audio/mpeg"
+            />
+          </audio>
+
+          <hr />
+
+          <!-- Buttons -->
+          <div class="buttons">
+            {% if page_num > 1 %}
+
+            <a href="/book/{{ filename }}/{{ page_num-1 }}">
+              <button>← Previous</button>
+            </a>
+
+            {% endif %}
+
+            <!-- Listen Button -->
+
+            <a href="/listen/{{ filename }}/{{ page_num }}">
+              <button>🔊 Listen</button>
+            </a>
+
+            {% if page_num < total_pages %}
+
+            <a href="/book/{{ filename }}/{{ page_num+1 }}">
+              <button>Next →</button>
+            </a>
+
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

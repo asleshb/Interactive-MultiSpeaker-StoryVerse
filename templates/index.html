@@ -1,0 +1,47 @@
+<!doctype html>
+<html>
+  <head>
+    <title>AI Book Reader</title>
+
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/style.css') }}"
+    />
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="sidebar">
+        <h2>Uploads</h2>
+
+        {% for file in files %}
+
+        <a href="/book/{{ file }}/1">
+          <div class="book-item">📚 {{ file }}</div>
+        </a>
+
+        {% endfor %}
+      </div>
+
+      <div class="main-content">
+        <h1>AI Book Reader 📚</h1>
+
+        <div class="upload-card">
+          <div class="icon">📂</div>
+
+          <h2>File</h2>
+
+          <p>Upload PDF File</p>
+
+          <form method="POST" enctype="multipart/form-data">
+            <input type="file" name="book" accept=".pdf" required />
+
+            <br /><br />
+
+            <button type="submit">Upload</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

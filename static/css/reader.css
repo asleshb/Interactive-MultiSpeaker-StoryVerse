@@ -1,0 +1,91 @@
+body {
+  margin: 0;
+  background: #f5f7fa;
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  background: #2c3e50;
+  color: white;
+  padding: 20px;
+}
+
+.book-item {
+  background: #34495e;
+  padding: 12px;
+  border-radius: 10px;
+  margin-top: 15px;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.reader-card {
+  width: 70%;
+
+  background: white;
+
+  border-radius: 20px;
+
+  padding: 40px;
+
+  box-shadow: 0px 5px 20px rgba(0, 0, 0, 0.15);
+}
+
+.title {
+  text-align: center;
+
+  font-size: 35px;
+}
+
+.page-info {
+  text-align: center;
+
+  color: gray;
+
+  margin-bottom: 30px;
+}
+
+.book-text {
+  font-size: 20px;
+
+  line-height: 2;
+
+  text-align: justify;
+
+  height: 500px;
+
+  overflow-y: auto;
+}
+
+.buttons {
+  margin-top: 30px;
+
+  display: flex;
+
+  justify-content: space-between;
+}
+
+button {
+  padding: 15px 30px;
+
+  border: none;
+
+  border-radius: 15px;
+
+  background: #4f46e5;
+
+  color: white;
+
+  cursor: pointer;
+}
