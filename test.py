@@ -1,99 +1,84 @@
 import os
-from pydantic import BaseModel, Field
-from typing import List, Literal
-from google import genai
-from google.genai import types
-from dotenv import load_dotenv
+import sys
 
-load_dotenv()
+# 1. Inject the folder directly into the script's active runtime path environment
+# This guarantees pydub finds it the absolute millisecond it initializes!
+ffmpeg_dir = r"C:\ffmpeg\ffmpeg-8.1.2-essentials_build\bin"
+if os.path.exists(ffmpeg_dir):
+    os.environ["PATH"] += os.pathsep + ffmpeg_dir
+    print(f"[ENVIRONMENT SET] Added {ffmpeg_dir} to runtime PATH.")
+else:
+    print(f"[ENVIRONMENT ERROR] Could not find folder: {ffmpeg_dir}")
+    sys.exit(1)
 
-client = genai.Client()
+# 2. NOW it is safe to import pydub (Warnings will vanish!)
+import asyncio
+import edge_tts
+from pydub import AudioSegment
 
-# 1. Define the exact structure for a single line of your script
-class ScriptLine(BaseModel):
-    speaker: str = Field(description="The character name or 'Narrator'.")
-    text: str = Field(description="The spoken text or narration. Do NOT invent new text.")
-    type: Literal["narration", "dialogue", "internal_thought"] = Field(description="Audio track delivery category.")
-    emotion: Literal["neutral", "happy", "angry", "confused", "whispered", "excited", "mysterious"] = Field(description="Emotional tone cue.")
+print("--- STARTING ISOLATED EDGE-TTS MULTI-VOICE TEST ---")
 
-# 2. Define the container for the final array
-class Screenplay(BaseModel):
-    script: List[ScriptLine]
+# Explicit fallback assignments (Good practice to keep alongside environment patch)
+ffmpeg_actual_path = os.path.join(ffmpeg_dir, "ffmpeg.exe")
+ffprobe_actual_path = os.path.join(ffmpeg_dir, "ffprobe.exe")
 
-# 3. Connect to Google AI Studio using your API key
-# Get a free key from https://aistudio.google.com/
-# Set it in your terminal environment variables: set GEMINI_API_KEY="your_key"
+if os.path.exists(ffmpeg_actual_path) and os.path.exists(ffprobe_actual_path):
+    AudioSegment.converter = ffmpeg_actual_path
+    AudioSegment.ffprobe = ffprobe_actual_path
+    print("[FFMPEG CHECK] Success! Connected explicitly to ffmpeg and ffprobe binaries.")
+else:
+    print("[FFMPEG CHECK] Error! Files missing inside the directory.")
+    sys.exit(1)
 
+# --- The rest of your script remains exactly the same ---
+test_screenplay = [
+    {"speaker": "Narrator", "text": "The dark, quiet street of Privet Drive was completely still."},
+    {"speaker": "Mr. Dursley", "text": "What is going on out there? Who is whispering at this hour?!"},
+    {"speaker": "Dumbledore", "text": "I should have known you would be here, Professor McGonagall."},
+    {"speaker": "Mrs. Dursley", "text": "Oh dear, I hope the neighbors didn't hear that mechanical rumble."},
+    {"speaker": "Narrator", "text": "A sudden low breeze swept over the clean stone walls."}
+]
 
-raw_book_text = """
- Harry Potter
-happily as she wrestled a screaming Dudley into his high chair.
-None of them noticed a large tawny owl flutter past the window.
-At half past eight, Mr Dursley picked up his briefcase, pecked
-Mrs Dursley on the cheek and tried to kiss Dudley goodbye but
-missed, because Dudley was now having a tantrum and throwing
-his cereal at the walls. ‘Little tyke,’ chortled Mr Dursley as he left
-the house. He got into his car and backed out of number four’s
-drive.
-It was on the corner of the street that he noticed the first sign
-of something peculiar – a cat reading a map. For a second, Mr
-Dursley didn’t realise what he had seen – then he jerked his head
-around to look again. There was a tabby cat standing on the corner
-of Privet Drive, but there wasn’t a map in sight. What could
-he have been thinking of? It must have been a trick of the light.
-Mr Dursley blinked and stared at the cat. It stared back. As Mr
-Dursley drove around the corner and up the road, he watched the
-cat in his mirror. It was now reading the sign that said Privet Drive
-– no, looking at the sign; cats couldn’t read maps or signs. Mr
-Dursley gave himself a little shake and put the cat out of his
-mind. As he drove towards town he thought of nothing except a
-large order of drills he was hoping to get that day.
-But on the edge of town, drills were driven out of his mind by
-something else. As he sat in the usual morning traffic jam, he
-couldn’t help noticing that there seemed to be a lot of strangely
-dressed people about. People in cloaks. Mr Dursley couldn’t bear
-people who dressed in funny clothes – the get-ups you saw on
-young people! He supposed this was some stupid new fashion. He
-drummed his fingers on the steering wheel and his eyes fell on a
-huddle of these weirdos standing quite close by. They were whis-
-pering excitedly together. Mr Dursley was enraged to see that a
-couple of them weren’t young at all; why, that man had to be older
-than he was, and wearing an emerald-green cloak! The nerve of
-him! But then it struck Mr Dursley that this was probably some
-silly stunt – these people were obviously collecting for something
-… yes, that would be it. The traffic moved on, and a few minutes
-later, Mr Dursley arrived in the Grunnings car park, his mind
-back on drills.
-Mr Dursley always sat with his back to the window in his office
-on the ninth floor. If he hadn’t, he might have found it harder to
-concentrate on drills that morning. He didn’t see the owls
-"""
+VOICE_MAP = {
+    "Narrator": "en-US-ChristopherNeural",
+    "Mr. Dursley": "en-GB-RyanNeural",
+    "Mrs. Dursley": "en-GB-SoniaNeural",
+    "Dumbledore": "en-US-GuyNeural",
+    "Default": "en-US-ChristopherNeural"
+}
 
-print("🎬 The Google Cloud Engine is processing your text structurally... Please wait...\n")
+async def generate_line_audio(text, speaker, temp_path):
+    selected_voice = VOICE_MAP.get(speaker, VOICE_MAP["Default"])
+    communicate = edge_tts.Communicate(text, selected_voice)
+    await communicate.save(temp_path)
 
-# 4. Execute structural screenplay transformation using Gemini 1.5 Flash
-response = client.models.generate_content(
-    model='gemini-2.5-flash', # Blazing fast and completely free
-    contents=f"Convert this text snippet into a screenplay strictly adhering to the schema:\n\n{raw_book_text}",
-    config=types.GenerateContentConfig(
-        # The system instructions dictate your specific script rules
-     system_instruction=(
-            "You are a Hollywood Screenplay Writer adapting a novel into an interactive audio drama script.\n"
-            "Do NOT just copy book sentences word-for-word. Instead, actively convert passive descriptions into active lines:\n\n"
-            "Rules:\n"
-            "1. REWRITE PASSIVE DESCRIPTIONS TO INTERNAL THOUGHTS: When a book describes a character's proud feelings, opinions, or regular mindset, change the speaker to that character. Rewrite the sentence into a first-person direct thought spoken out loud by them (e.g., Change 'They were proud to be normal' to 'We are perfectly normal, thank you very much!').\n"
-            "2. CLEAN NARRATION ONLY: The Narrator must ONLY speak clean sentences that describe scenery, size, appearance, or background movement (e.g., 'Mr Dursley was the director of a firm called Grunnings...'). Keep these atmospheric.\n"
-            "3. STRIP DIALOGUE TAGS: Remove words like 'he muttered' or 'she said' from the actual spoken text track.\n"
-            "4. EMOTION TRACK: Match the character's line to a fitting emotion cue. For example, if they are proud of being normal, set emotion to 'excited' or 'neutral'."
-        ),
-        # This tells Google AI Studio to strictly force the output into your Pydantic schema
-        response_mime_type="application/json",
-        response_schema=Screenplay,
-        temperature=0.1 # Keeps the model highly precise and rule-following
-    ),
-)
+def run_audio_pipeline():
+    temp_files = []
+    
+    for idx, line in enumerate(test_screenplay):
+        speaker = line["speaker"]
+        text = line["text"]
+        temp_line_path = f"temp_line_{idx}.mp3"
+        
+        print(f"-> edge-tts calling voice for: {speaker:12} | Text: '{text[:30]}...'")
+        asyncio.run(generate_line_audio(text, speaker, temp_line_path))
+        temp_files.append(temp_line_path)
 
-# 5. Output the beautiful, validated JSON array
-print(response.text)
+    print("\n[STITCHING] Handing the clips over to FFmpeg to glue back-to-back...")
+    combined_audio = AudioSegment.empty()
+    
+    for file_path in temp_files:
+        if os.path.exists(file_path):
+            segment = AudioSegment.from_mp3(file_path)
+            combined_audio += segment + AudioSegment.silent(duration=400)
 
+    output_file = "test_output.mp3"
+    combined_audio.export(output_file, format="mp3")
+    print(f"[SUCCESS] Multi-voice file created! Saved as: '{output_file}'")
 
+    for file_path in temp_files:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+if __name__ == "__main__":
+    run_audio_pipeline()
