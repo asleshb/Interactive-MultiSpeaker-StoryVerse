@@ -1,8 +1,9 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>AI Book Reader</title>
-
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Book Reader - Home</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/style.css') }}"
@@ -11,37 +12,58 @@
 
   <body>
     <div class="container">
+      <!-- Sidebar -->
       <div class="sidebar">
-        <h2>Uploads</h2>
-
-        {% for file in files %}
-
-        <a href="/book/{{ file }}/1">
-          <div class="book-item">📚 {{ file }}</div>
-        </a>
-
-        {% endfor %}
+        <h2>📚 Library</h2>
+        {% if files %}
+          {% for file in files %}
+          <a href="/book/{{ file }}/1" id="book-link-{{ loop.index }}">
+            <div class="book-item">📄 {{ file }}</div>
+          </a>
+          {% endfor %}
+        {% else %}
+          <p style="font-size: 0.9rem; color: var(--text-secondary); text-align: center; margin-top: 20px;">No books uploaded yet.</p>
+        {% endif %}
       </div>
 
+      <!-- Main Content -->
       <div class="main-content">
-        <h1>AI Book Reader 📚</h1>
+        <h1>Welcome to <span>StoryVerse</span></h1>
 
         <div class="upload-card">
           <div class="icon">📂</div>
-
-          <h2>File</h2>
-
-          <p>Upload PDF File</p>
+          <h2>Upload PDF Book</h2>
+          <p>Select any PDF book chapter to analyze, listen, and transform it into an interactive screenplay.</p>
 
           <form method="POST" enctype="multipart/form-data">
-            <input type="file" name="book" accept=".pdf" required />
-
-            <br /><br />
-
-            <button type="submit">Upload</button>
+            <div class="file-input-wrapper">
+              <input type="file" name="book" accept=".pdf" id="book-upload-input" required onchange="updateFileName(this)" />
+              <div class="file-input-label" id="upload-label">
+                <span class="highlight">Click to browse</span> or drag PDF here
+                <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-secondary);" id="selected-file-name">No file selected</span>
+              </div>
+            </div>
+            <button type="submit" class="upload-btn" id="upload-submit-btn">Upload & Process</button>
           </form>
         </div>
       </div>
     </div>
+
+    <script>
+      function updateFileName(input) {
+        const fileNameSpan = document.getElementById('selected-file-name');
+        const uploadLabel = document.getElementById('upload-label');
+        if (input.files && input.files[0]) {
+          const name = input.files[0].name;
+          fileNameSpan.textContent = name;
+          fileNameSpan.style.color = 'var(--accent)';
+          fileNameSpan.style.fontWeight = '600';
+        } else {
+          fileNameSpan.textContent = 'No file selected';
+          fileNameSpan.style.color = 'var(--text-secondary)';
+          fileNameSpan.style.fontWeight = 'normal';
+        }
+      }
+    </script>
   </body>
 </html>

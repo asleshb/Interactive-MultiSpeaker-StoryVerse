@@ -1,8 +1,9 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
-    <title>{{ filename }}</title>
-
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ filename }} - AI Reader</title>
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='css/reader.css') }}"
@@ -14,11 +15,10 @@
       <!-- Sidebar -->
       <div class="sidebar">
         <h2>📚 Library</h2>
-
         {% for file in files %}
-
-        <div class="book-item">{{ file }}</div>
-
+        <div class="book-item {% if file == filename %}active{% endif %}">
+          📄 {{ file }}
+        </div>
         {% endfor %}
 
         <div class="top-bar">
@@ -30,52 +30,249 @@
       <div class="main-content">
         <div class="reader-card">
           <h1 class="title">{{ filename }}</h1>
-
           <div class="page-info">Page {{ page_num }} of {{ total_pages }}</div>
 
-          <hr />
+          <!-- Tab Selector -->
+          <div class="tabs-container">
+            <button class="tab-btn active" id="book-tab-btn" onclick="switchTab('book')">📖 Book Text</button>
+            <button class="tab-btn" id="screenplay-tab-btn" onclick="switchTab('screenplay')">🎬 AI Screenplay</button>
+          </div>
 
-          <!-- Book Text -->
-          <div class="book-text">{{ text }}</div>
+          <!-- Content Panels -->
+          <div class="tab-content">
+            <!-- Book Panel -->
+            <div class="tab-panel active" id="book-panel">
+              <div class="book-text" id="book-text-content">
+                {{ text | replace('\n', '<br>') | safe }}
+              </div>
+            </div>
 
-          <hr />
+            <!-- Screenplay Panel -->
+            {% set emoji_map = {
+              'neutral': '😐',
+              'happy': '😄',
+              'angry': '😠',
+              'confused': '😕',
+              'whispered': '🤫',
+              'excited': '🤩',
+              'mysterious': '🔮'
+            } %}
+            <div class="tab-panel" id="screenplay-panel">
+              <div class="screenplay-container">
+                {% if screenplay %}
+                  {% for line in screenplay %}
+                  <div class="script-line {{ line.type }}">
+                    <div class="script-meta">
+                      <span class="speaker-name">{{ line.speaker }}</span>
+                      <span class="emotion-badge">
+                        {{ emoji_map.get(line.emotion, '🎭') }} {{ line.emotion }}
+                      </span>
+                      {% if line.speaker != 'Narrator' and line.speaker != 'narrator' %}
+                      <button class="chat-character-btn" onclick="openChat('{{ line.speaker | replace("'", "\\'") }}')">
+                        💬 Chat
+                      </button>
+                      {% endif %}
+                    </div>
+                    <div class="bubble">
+                      {{ line.text }}
+                    </div>
+                  </div>
+                  {% endfor %}
+                {% else %}
+                  <div style="text-align: center; color: var(--text-secondary); padding: 50px 20px;">
+                    <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 8px;">No screenplay found</p>
+                    <p style="font-size: 0.9rem;">Wait for the screenplay structure to generate from page text snippets.</p>
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
 
-          <!-- Audio Player -->
-          <audio controls>
-            <source
-              src="{{ url_for('static', filename='audio.mp3') }}"
-              type="audio/mpeg"
-            />
-          </audio>
+          <!-- Audio Section -->
+          <div class="audio-section">
+            <audio controls id="page-audio-player">
+              <source
+                src="{{ url_for('static', filename='audio.mp3') }}"
+                type="audio/mpeg"
+              />
+              Your browser does not support the audio element.
+            </audio>
+          </div>
 
-          <hr />
-
-          <!-- Buttons -->
-          <div class="buttons">
+          <!-- Navigation Controls -->
+          <div class="controls">
             {% if page_num > 1 %}
-
-            <a href="/book/{{ filename }}/{{ page_num-1 }}">
-              <button>← Previous</button>
+            <a href="/book/{{ filename }}/{{ page_num-1 }}" class="nav-btn" id="prev-page-btn">
+              ← Previous
             </a>
-
+            {% else %}
+            <div></div>
             {% endif %}
 
-            <!-- Listen Button -->
-
-            <a href="/listen/{{ filename }}/{{ page_num }}">
-              <button>🔊 Listen</button>
+            <a href="/listen/{{ filename }}/{{ page_num }}" class="nav-btn primary" id="listen-page-btn">
+              🔊 Regenerate Audio
             </a>
 
             {% if page_num < total_pages %}
-
-            <a href="/book/{{ filename }}/{{ page_num+1 }}">
-              <button>Next →</button>
+            <a href="/book/{{ filename }}/{{ page_num+1 }}" class="nav-btn" id="next-page-btn">
+              Next →
             </a>
-
+            {% else %}
+            <div></div>
             {% endif %}
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Character Chat Modal Overlay -->
+    <div class="modal-overlay" id="chat-modal">
+      <div class="modal-card">
+        <div class="modal-header">
+          <div class="modal-title-wrapper">
+            <div class="modal-avatar" id="modal-avatar">C</div>
+            <div>
+              <h3 id="modal-character-name">Character Name</h3>
+              <p>Pause & Chat Interface</p>
+            </div>
+          </div>
+          <button class="close-modal-btn" onclick="closeChat()">&times;</button>
+        </div>
+        <div class="modal-chat-body" id="chat-messages-container">
+          <div class="chat-bubble character" id="character-initial-greeting">
+            Hello! I am ready to talk to you. What is on your mind?
+          </div>
+          <div class="typing-indicator" id="chat-typing-indicator">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </div>
+        <div class="modal-chat-footer">
+          <div class="chat-input-wrapper">
+            <input type="text" class="chat-input" id="chat-user-input" placeholder="Type your message..." onkeydown="handleChatKeyDown(event)" />
+            <button class="send-chat-btn" id="send-chat-btn" onclick="sendChatMessage()">Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Tab switching logic
+      function switchTab(tab) {
+        const bookBtn = document.getElementById('book-tab-btn');
+        const screenplayBtn = document.getElementById('screenplay-tab-btn');
+        const bookPanel = document.getElementById('book-panel');
+        const screenplayPanel = document.getElementById('screenplay-panel');
+
+        if (tab === 'book') {
+          bookBtn.classList.add('active');
+          screenplayBtn.classList.remove('active');
+          bookPanel.classList.add('active');
+          screenplayPanel.classList.remove('active');
+        } else {
+          bookBtn.classList.remove('active');
+          screenplayBtn.classList.add('active');
+          bookPanel.classList.remove('active');
+          screenplayPanel.classList.add('active');
+        }
+      }
+
+      // Chat Modal state and operations
+      let activeCharacter = "";
+
+      function openChat(characterName) {
+        activeCharacter = characterName;
+        document.getElementById('modal-character-name').textContent = characterName;
+        document.getElementById('modal-avatar').textContent = characterName.substring(0, 1).toUpperCase();
+        
+        // Reset messages
+        const container = document.getElementById('chat-messages-container');
+        const greeting = document.getElementById('character-initial-greeting');
+        const indicator = document.getElementById('chat-typing-indicator');
+        
+        // Remove old dynamic bubbles
+        const bubbles = container.querySelectorAll('.chat-bubble.dynamic');
+        bubbles.forEach(b => b.remove());
+        
+        greeting.textContent = `Hello, I am ${characterName}. Let's chat! Ask me anything about what's happening right now.`;
+        
+        document.getElementById('chat-user-input').value = '';
+        document.getElementById('chat-modal').classList.add('active');
+        document.getElementById('chat-user-input').focus();
+      }
+
+      function closeChat() {
+        document.getElementById('chat-modal').classList.remove('active');
+        activeCharacter = "";
+      }
+
+      function handleChatKeyDown(event) {
+        if (event.key === 'Enter') {
+          sendChatMessage();
+        }
+      }
+
+      async function sendChatMessage() {
+        const inputField = document.getElementById('chat-user-input');
+        const message = inputField.value.trim();
+        if (!message) return;
+
+        inputField.value = '';
+        
+        const container = document.getElementById('chat-messages-container');
+        const indicator = document.getElementById('chat-typing-indicator');
+        
+        // Add User message bubble
+        const userBubble = document.createElement('div');
+        userBubble.className = 'chat-bubble user dynamic';
+        userBubble.textContent = message;
+        container.insertBefore(userBubble, indicator);
+        container.scrollTop = container.scrollHeight;
+
+        // Show typing indicator
+        indicator.style.display = 'flex';
+        container.scrollTop = container.scrollHeight;
+
+        try {
+          const response = await fetch('/api/character-chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              character: activeCharacter,
+              message: message
+            })
+          });
+
+          const data = await response.json();
+          indicator.style.display = 'none';
+
+          // Add Character reply bubble
+          const replyBubble = document.createElement('div');
+          replyBubble.className = 'chat-bubble character dynamic';
+          if (data.reply) {
+            replyBubble.textContent = data.reply;
+          } else if (data.error) {
+            replyBubble.textContent = `Error: ${data.error}`;
+            replyBubble.style.color = '#ef4444';
+          } else {
+            replyBubble.textContent = "I don't know what to say.";
+          }
+          
+          container.insertBefore(replyBubble, indicator);
+          container.scrollTop = container.scrollHeight;
+        } catch (error) {
+          indicator.style.display = 'none';
+          const errorBubble = document.createElement('div');
+          errorBubble.className = 'chat-bubble character dynamic';
+          errorBubble.textContent = `Error: ${error.message}`;
+          errorBubble.style.color = '#ef4444';
+          container.insertBefore(errorBubble, indicator);
+          container.scrollTop = container.scrollHeight;
+        }
+      }
+    </script>
   </body>
 </html>
